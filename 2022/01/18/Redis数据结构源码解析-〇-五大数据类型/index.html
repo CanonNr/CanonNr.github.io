@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="Hexo Theme Keep">
+    <meta name="author" content="SunRan">
+    
+    <title>
+        
+            Redis数据结构源码解析(〇) 五大数据类型 |
+        
+        lksun
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/39935301?v=4">
+    
+<link rel="stylesheet" href="/css/font-awesome.min.css">
+
+    <script id="hexo-configurations">
+    let KEEP = window.KEEP || {};
+    KEEP.hexo_config = {"hostname":"lksun.cn","root":"/","language":"zh-CN","path":"search.json"};
+    KEEP.theme_config = {"toc":{"enable":false,"number":false,"expand_all":false,"init_open":true},"style":{"primary_color":"#FF7E00","avatar":"https://avatars.githubusercontent.com/u/39935301?v=4","favicon":"https://avatars.githubusercontent.com/u/39935301?v=4","article_img_align":"left","left_side_width":"260px","content_max_width":"920px","hover":{"shadow":false,"scale":false},"first_screen":{"enable":true,"background_img":"/images/bg.svg","description":"♥ Do have faith in what you're doing."},"scroll":{"progress_bar":{"enable":false},"percent":{"enable":false}}},"local_search":{"enable":true,"preload":true},"code_copy":{"enable":false,"style":"default"},"pjax":{"enable":false},"lazyload":{"enable":false},"version":"3.4.5"};
+    KEEP.language_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"};
+  </script>
+<meta name="generator" content="Hexo 6.0.0"><link rel="alternate" href="/atom.xml" title="lksun" type="application/atom+xml">
+</head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+
+    
+</div>
+
+
+<main class="page-container">
+
+    
+
+    <div class="page-main-content">
+
+        <div class="page-main-content-top">
+            <header class="header-wrapper">
+
+    <div class="header-content">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                lksun
+            </a>
+        </div>
+
+        <div class="right">
+            <div class="pc">
+                <ul class="menu-list">
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/"
+                            >
+                                首页
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/archives"
+                            >
+                                归档
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/collection"
+                            >
+                                合集
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/BlogPlan"
+                            >
+                                计划
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/about"
+                            >
+                                关于我
+                            </a>
+                        </li>
+                    
+                    
+                        <li class="menu-item search search-popup-trigger">
+                            <i class="fas fa-search"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <div class="mobile">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fas fa-search"></i></div>
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/collection">合集</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/BlogPlan">计划</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/about">关于我</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle">
+
+            <div class="main-content">
+
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <span class="title-hover-animation">Redis数据结构源码解析(〇) 五大数据类型</span>
+        </div>
+
+        
+            <div class="article-header">
+                <div class="avatar">
+                    <img src="https://avatars.githubusercontent.com/u/39935301?v=4">
+                </div>
+                <div class="info">
+                    <div class="author">
+                        <span class="name">SunRan</span>
+                        
+                    </div>
+                    <div class="meta-info">
+                        <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fas fa-edit"></i>&nbsp;
+        <span class="pc">2022-01-18 00:00:00</span>
+        <span class="mobile">2022-01-18 00:00</span>
+    </span>
+    
+        <span class="article-categories article-meta-item">
+            <i class="fas fa-folder"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/categories/Redis/">Redis</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fas fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/%E6%BA%90%E7%A0%81/">源码</a>&nbsp;
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%B3%BB%E5%88%97/">Redis数据结构源码解析系列</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fas fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+</div>
+
+                    </div>
+                </div>
+            </div>
+        
+
+        <div class="article-content markdown-body">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本文不介绍具体使用，已底层实现为主。先宏观介绍下实现方式具体实现后续文章介绍。</p>
+<h2 id="数据类型"><a href="#数据类型" class="headerlink" title="数据类型"></a>数据类型</h2><ul>
+<li>字符串 String</li>
+<li>列表 List</li>
+<li>集合 Set</li>
+<li>有序集合 ZSet</li>
+<li>哈希 Hash</li>
+</ul>
+<h2 id="数据编码"><a href="#数据编码" class="headerlink" title="数据编码"></a>数据编码</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_RAW 0     <span class="comment">/* Raw representation */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_INT 1     <span class="comment">/* Encoded as integer */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_HT 2      <span class="comment">/* Encoded as hash table */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_ZIPMAP 3  <span class="comment">/* Encoded as zipmap */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_LINKEDLIST 4 <span class="comment">/* No longer used: old list encoding. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_ZIPLIST 5 <span class="comment">/* Encoded as ziplist */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_INTSET 6  <span class="comment">/* Encoded as intset */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_SKIPLIST 7  <span class="comment">/* Encoded as skiplist */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_EMBSTR 8  <span class="comment">/* Embedded sds string encoding */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_QUICKLIST 9 <span class="comment">/* Encoded as linked list of ziplists */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_STREAM 10 <span class="comment">/* Encoded as a radix tree of listpacks */</span></span></span><br></pre></td></tr></table></figure>
+
+<h2 id="底层实现"><a href="#底层实现" class="headerlink" title="底层实现"></a>底层实现</h2><p><img src="https://raw.githubusercontent.com/CanonNr/blog-image/master/img/202201201105650.png" alt="image-20220120110543608"></p>
+<h3 id="一-、字符串"><a href="#一-、字符串" class="headerlink" title="一 、字符串"></a>一 、字符串</h3><p>使用了三种作为底层的实现：</p>
+<ol>
+<li><p>embstr（OBJ_ENCODING_EMBSTR）</p>
+<p>长度小于44字节的字符串，该编码中 <code>RedisObject</code>、<code>SDS</code>放置在连续的内存中。</p>
+</li>
+<li><p>row（OBJ_ENCODING_RAW）</p>
+<p>长度大于44字节,除此之外与 <code>OBJ_ENCODING_EMBSTR</code>区别仅在于是否为连续内存</p>
+</li>
+<li><p>int（OBJ_ENCODING_INT）</p>
+<p>有时候我们会在String寸INT类型的自然数，例如一个手机号如果为字符串则需要11字节，如果使用long long 只需要8字节。</p>
+</li>
+</ol>
+<p>3中的 <code>Int</code>没什么好说的属于基本数据类型，1和2都涉及到SDS，这也是Redis中很基础的一个对象。</p>
+<h3 id="二-、列表"><a href="#二-、列表" class="headerlink" title="二 、列表"></a>二 、列表</h3><p>使用了三种作为底层的实现：</p>
+<ol>
+<li>双向链表（OBJ_ENCODING_LINKEDLIST）<ul>
+<li>链表节点指针比较多，内存浪费。</li>
+<li>链表会造成内存碎片</li>
+</ul>
+</li>
+<li>压缩列表（OBJ_ENCODING_ZIPLIST）<ul>
+<li>底层为数组实现，解决了内存碎片问题，不需要指针</li>
+<li>当元素很多时，可用内存明明足够，但是因为没有足够大的连续内存而出问题</li>
+<li>数组的新增、删除牵一发动全身，需要整个列表进行数据操作</li>
+</ul>
+</li>
+<li>快速列表（OBJ_ENCODING_ZIPLIST）<ul>
+<li>基于压缩列表和链表实现，解决了压缩列表存在的一些问题，通过分治思想把很大的列表拆分为多个</li>
+</ul>
+</li>
+</ol>
+<p><strong>3.2</strong>版本之后弃用了双向链表改为快速列表。</p>
+<p>那么什么时候使用压缩列表什么时候使用快速列表？</p>
+<ul>
+<li>所有字符串元素的长度都小于 64 字节并且保存的元素数量小于512个的列表使用压缩列表</li>
+<li>存在字符串元素长度大于64或元素个数大于512个使用快速列表</li>
+</ul>
+<h3 id="三、Hash"><a href="#三、Hash" class="headerlink" title="三、Hash"></a>三、Hash</h3><p>使用了两种作为底层的实现：</p>
+<ol>
+<li>字典（哈希表）(OBJ_ENCODING_HT)</li>
+<li>压缩列表（OBJ_ENCODING_ZIPLIST）</li>
+</ol>
+<p>关于两者的选择其实比较简单：</p>
+<blockquote>
+<p>因为压缩列表比字典更节省内存， 所以程序在创建新 Hash 键时， 默认使用压缩列表作为底层实现， 当有需要时， 程序才会将底层实现从压缩列表转换到字典。</p>
+</blockquote>
+<ul>
+<li>总长度超过512字节或者单个元素长度大于64使用字典</li>
+<li>总长度小于512字节或者单个元素长度小于64使用压缩列表</li>
+</ul>
+<h3 id="四、Set"><a href="#四、Set" class="headerlink" title="四、Set"></a>四、Set</h3><p>使用了两种作为底层的实现：</p>
+<ol>
+<li>整数集合 (OBJ_ENCODING_INTSET)</li>
+<li>字典（哈希表）(OBJ_ENCODING_HT)</li>
+</ol>
+<p>关于两者的选择：</p>
+<blockquote>
+<p>Redis没有规定Set可存放的数据类型为什么，可能遇到与String同样的问题。存储一个手机号，使用字符串和long类型内存的占用是完全不一样的。</p>
+<p>真的是能省就省</p>
+</blockquote>
+<ul>
+<li>集合对象保存的所有元素都是整数值且元素数量不超过 <code>512</code> 个使用整数集合</li>
+<li>总长度超过512字节或者单个元素长度大于64的使用字典</li>
+<li>遇到如下情况会立刻发生转换<ul>
+<li>往集合中添加了非整型变量会转换为字典</li>
+</ul>
+</li>
+</ul>
+<h3 id="五、ZSet"><a href="#五、ZSet" class="headerlink" title="五、ZSet"></a>五、ZSet</h3><p>使用了两种作为底层的实现：</p>
+<ol>
+<li>跳跃表（OBJ_ENCODING_SKIPLIST）</li>
+<li>压缩列表（OBJ_ENCODING_ZIPLIST）</li>
+</ol>
+<p>两者的选择也在于内存的使用上：</p>
+<blockquote>
+<p>在大量元素的集合中使用跳跃表可以更快的查询，但是如果数量不多还要存储大量的多层索引会造成内存的浪费。</p>
+</blockquote>
+<ul>
+<li><code>zset</code>会根据 <code>zadd</code>命令添加的第一个元素的长度大小来选择编码方式：满足 <code>zset_max_ziplist_entries</code>的值不为0，第一个元素的长度小于 <code>server.zset_max_ziplist_value</code>，使用压缩列表，否则就是跳跃表。</li>
+<li>待新加的新的字符串长度超过 <code>zset_max_ziplist_value</code>（默认值64）时或者 <code>ziplist</code>保存的节点数量超过 <code>server.zset_max_ziplist_entries</code>（默认值128）时使用skiplist。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><table>
+<thead>
+<tr>
+<th>数据类型</th>
+<th>String</th>
+<th>List</th>
+<th>Hash</th>
+<th>Set</th>
+<th>ZSet</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em><strong>SDS</strong></em></td>
+<td>√</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>快速列表</strong></td>
+<td></td>
+<td>√</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>双向链表</strong></td>
+<td></td>
+<td>√</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>压缩列表</strong></td>
+<td></td>
+<td>√</td>
+<td>√</td>
+<td></td>
+<td>√</td>
+</tr>
+<tr>
+<td><strong>跳跃表</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>√</td>
+</tr>
+<tr>
+<td><strong>字典（哈希表）</strong></td>
+<td></td>
+<td></td>
+<td>√</td>
+<td>√</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>整数集合</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td>√</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2 id="致谢"><a href="#致谢" class="headerlink" title="致谢"></a>致谢</h2><ul>
+<li><a class="link"   target="_blank" rel="noopener" href="https://tech.youzan.com/redisyuan-ma-jie-xi/" >Redis源码解析 - 有赞技术团队<i class="fas fa-external-link-alt"></i></a></li>
+<li><a class="link"   target="_blank" rel="noopener" href="http://redisbook.com/index.html" >Redis 设计与实现<i class="fas fa-external-link-alt"></i></a></li>
+</ul>
+
+        </div>
+
+        
+            <div class="post-copyright-info">
+                <div class="article-copyright-info-container">
+    <ul>
+        <li>本文标题：Redis数据结构源码解析(〇) 五大数据类型</li>
+        <li>本文作者：SunRan</li>
+        <li>创建时间：2022-01-18 00:00:00</li>
+        <li>
+            本文链接：https://lksun.cn/2022/01/18/Redis数据结构源码解析-〇-五大数据类型/
+        </li>
+        <li>
+            版权声明：本博客所有文章除特别声明外，均采用 <a class="license" target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh">BY-NC-SA</a> 许可协议。转载请注明出处！
+        </li>
+    </ul>
+</div>
+
+            </div>
+        
+
+        
+            <ul class="post-tags-box">
+                
+                    <li class="tag-item">
+                        <a href="/tags/%E6%BA%90%E7%A0%81/">#源码</a>&nbsp;
+                    </li>
+                
+                    <li class="tag-item">
+                        <a href="/tags/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%B3%BB%E5%88%97/">#Redis数据结构源码解析系列</a>&nbsp;
+                    </li>
+                
+            </ul>
+        
+
+        
+            <div class="article-nav">
+                
+                    <div class="article-prev">
+                        <a class="prev"
+                           rel="prev"
+                           href="/2022/01/18/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-%E4%B8%80-SDS/"
+                        >
+                            <span class="left arrow-icon flex-center">
+                              <i class="fas fa-chevron-left"></i>
+                            </span>
+                            <span class="title flex-center">
+                                <span class="post-nav-title-item">Redis数据结构源码解析(一) SDS</span>
+                                <span class="post-nav-item">上一篇</span>
+                            </span>
+                        </a>
+                    </div>
+                
+                
+                    <div class="article-next">
+                        <a class="next"
+                           rel="next"
+                           href="/2022/01/08/%E5%85%B3%E4%BA%8EMysql%E7%9A%84%E6%B1%9F%E6%B9%96%E4%BC%A0%E8%A8%80/"
+                        >
+                            <span class="title flex-center">
+                                <span class="post-nav-title-item">关于Mysql的江湖传言</span>
+                                <span class="post-nav-item">下一篇</span>
+                            </span>
+                            <span class="right arrow-icon flex-center">
+                              <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </a>
+                    </div>
+                
+            </div>
+        
+
+        
+            <div class="comment-container">
+                <div class="comments-container">
+    <div id="comment-anchor"></div>
+    <div class="comment-area-title">
+        <i class="fas fa-comments">&nbsp;评论</i>
+    </div>
+    
+
+        
+            
+    <div id="gitalk-container"></div>
+    <script 
+            src="//cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+    <script >
+
+        function loadGitalk() {
+            let __gitalk__pathname = decodeURI(location.pathname);
+            const __gitalk__pathnameLength = __gitalk__pathname.length;
+            const __gitalk__pathnameMaxLength = 50;
+            if (__gitalk__pathnameLength > __gitalk__pathnameMaxLength) {
+                __gitalk__pathname = __gitalk__pathname.substring(0, __gitalk__pathnameMaxLength - 3) + '...';
+            }
+
+            try {
+                Gitalk && new Gitalk({
+                    clientID: '08e9308be0b51d05c331',
+                    clientSecret: '2054045db43d1be1b7032fabd599a70760a91ec1',
+                    repo: 'canonnr.github.io',
+                    owner: 'CanonNr',
+                    admin: ['CanonNr'],
+                    id: __gitalk__pathname,
+                    language: 'zh-CN'
+                }).render('gitalk-container');
+
+            } catch (e) {
+                window.Gitalk = null;
+            }
+        }
+
+        if ('false') {
+            const loadGitalkTimeout = setTimeout(() => {
+                loadGitalk();
+                clearTimeout(loadGitalkTimeout);
+            }, 1000);
+        } else {
+            window.addEventListener('DOMContentLoaded', loadGitalk);
+        }
+    </script>
+
+
+
+        
+    
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+
+        </div>
+
+        <div class="page-main-content-bottom">
+            <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy;
+            
+              <span>2018</span>
+              -
+            
+            2022&nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;<a href="/">SunRan</a>
+        </div>
+        
+            <script async  src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="website-count info-item">
+                
+                    <span id="busuanzi_container_site_uv">
+                        访问人数&nbsp;<span id="busuanzi_value_site_uv"></span>&ensp;
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv">
+                        总访问量&nbsp;<span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+        <div class="theme-info info-item">
+            由 <a target="_blank" href="https://hexo.io">Hexo</a> 驱动&nbsp;|&nbsp;主题&nbsp;<a class="theme-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep v3.4.5</a>
+        </div>
+        
+            <div class="icp-info info-item"><a target="_blank" rel="nofollow" href="https://beian.miit.gov.cn">辽ICP备18001547号</a></div>
+        
+        
+    </div>
+</footer>
+
+        </div>
+    </div>
+
+    
+        <div class="post-tools">
+            <div class="post-tools-container">
+    <ul class="tools-list">
+        <!-- TOC aside toggle -->
+        
+
+        <!-- go comment -->
+        
+            <li class="go-comment">
+                <i class="fas fa-comment"></i>
+            </li>
+        
+    </ul>
+</div>
+
+        </div>
+    
+
+    <div class="right-bottom-side-tools">
+        <div class="side-tools-container">
+    <ul class="side-tools-list">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <li class="tools-item tool-expand-width flex-center">
+            <i class="fas fa-arrows-alt-h"></i>
+        </li>
+
+        <li class="tools-item tool-dark-light-toggle flex-center">
+            <i class="fas fa-moon"></i>
+        </li>
+
+        <!-- rss -->
+        
+            <li class="tools-item rss flex-center">
+                <a class="flex-center"
+                   href="/atom.xml"
+                   target="_blank"
+                >
+                    <i class="fas fa-rss"></i>
+                </a>
+            </li>
+        
+
+        
+            <li class="tools-item tool-scroll-to-top flex-center">
+                <i class="fas fa-arrow-up"></i>
+            </li>
+        
+
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list">
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+        
+    </ul>
+</div>
+
+    </div>
+
+    
+
+    <div class="image-viewer-container">
+    <img src="">
+</div>
+
+
+    
+        <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-input-field-pre">
+            <i class="fas fa-keyboard"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="popup-btn-close">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fas fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+</main>
+
+
+
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/dark-light-toggle.js"></script>
+
+
+
+    
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+<div class="post-scripts">
+    
+</div>
+
+
+
+</body>
+</html>

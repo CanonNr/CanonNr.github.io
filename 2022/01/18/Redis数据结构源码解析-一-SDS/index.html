@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="Hexo Theme Keep">
+    <meta name="author" content="SunRan">
+    
+    <title>
+        
+            Redis数据结构源码解析(一) SDS |
+        
+        lksun
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/39935301?v=4">
+    
+<link rel="stylesheet" href="/css/font-awesome.min.css">
+
+    <script id="hexo-configurations">
+    let KEEP = window.KEEP || {};
+    KEEP.hexo_config = {"hostname":"lksun.cn","root":"/","language":"zh-CN","path":"search.json"};
+    KEEP.theme_config = {"toc":{"enable":false,"number":false,"expand_all":false,"init_open":true},"style":{"primary_color":"#FF7E00","avatar":"https://avatars.githubusercontent.com/u/39935301?v=4","favicon":"https://avatars.githubusercontent.com/u/39935301?v=4","article_img_align":"left","left_side_width":"260px","content_max_width":"920px","hover":{"shadow":false,"scale":false},"first_screen":{"enable":true,"background_img":"/images/bg.svg","description":"♥ Do have faith in what you're doing."},"scroll":{"progress_bar":{"enable":false},"percent":{"enable":false}}},"local_search":{"enable":true,"preload":true},"code_copy":{"enable":false,"style":"default"},"pjax":{"enable":false},"lazyload":{"enable":false},"version":"3.4.5"};
+    KEEP.language_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"};
+  </script>
+<meta name="generator" content="Hexo 6.0.0"><link rel="alternate" href="/atom.xml" title="lksun" type="application/atom+xml">
+</head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+
+    
+</div>
+
+
+<main class="page-container">
+
+    
+
+    <div class="page-main-content">
+
+        <div class="page-main-content-top">
+            <header class="header-wrapper">
+
+    <div class="header-content">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                lksun
+            </a>
+        </div>
+
+        <div class="right">
+            <div class="pc">
+                <ul class="menu-list">
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/"
+                            >
+                                首页
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/archives"
+                            >
+                                归档
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/collection"
+                            >
+                                合集
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/BlogPlan"
+                            >
+                                计划
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/about"
+                            >
+                                关于我
+                            </a>
+                        </li>
+                    
+                    
+                        <li class="menu-item search search-popup-trigger">
+                            <i class="fas fa-search"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <div class="mobile">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fas fa-search"></i></div>
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/collection">合集</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/BlogPlan">计划</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/about">关于我</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle">
+
+            <div class="main-content">
+
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <span class="title-hover-animation">Redis数据结构源码解析(一) SDS</span>
+        </div>
+
+        
+            <div class="article-header">
+                <div class="avatar">
+                    <img src="https://avatars.githubusercontent.com/u/39935301?v=4">
+                </div>
+                <div class="info">
+                    <div class="author">
+                        <span class="name">SunRan</span>
+                        
+                    </div>
+                    <div class="meta-info">
+                        <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fas fa-edit"></i>&nbsp;
+        <span class="pc">2022-01-18 16:25:33</span>
+        <span class="mobile">2022-01-18 16:25</span>
+    </span>
+    
+        <span class="article-categories article-meta-item">
+            <i class="fas fa-folder"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/categories/Redis/">Redis</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fas fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/%E6%BA%90%E7%A0%81/">源码</a>&nbsp;
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%B3%BB%E5%88%97/">Redis数据结构源码解析系列</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fas fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+</div>
+
+                    </div>
+                </div>
+            </div>
+        
+
+        <div class="article-content markdown-body">
+            <h2 id="C语言存储字符串的问题"><a href="#C语言存储字符串的问题" class="headerlink" title="C语言存储字符串的问题"></a>C语言存储字符串的问题</h2><h3 id="C语言中没有类似Java中的String高级对象"><a href="#C语言中没有类似Java中的String高级对象" class="headerlink" title="C语言中没有类似Java中的String高级对象"></a>C语言中没有类似Java中的String高级对象</h3><p>在Java中 <code>String</code>用的不亦乐乎，其自带的 <code>equals</code>、<code>split</code>、<code>charAt</code>等方法真的很方便，但是C是没有这种高级对象的。</p>
+<p>如果在C语言中使用字符串有两种方式：</p>
+<ol>
+<li>使用字符串指针 <code>const char *str = &quot;hello&quot;;</code></li>
+<li>使用数组 <code>const char str[] = &quot;hello&quot;;</code></li>
+</ol>
+<p>方法一最大的缺陷在于字符串定义后即不能修改，所以更多情况下还是使用数组。</p>
+<h3 id="二进制安全"><a href="#二进制安全" class="headerlink" title="二进制安全"></a>二进制安全</h3><p>C语言中表示字符串结尾的符号是 <code>\0</code> ，如果字符串本身就具有 <code>\0</code> 字符，就会被截断，即非二进制安全。</p>
+<h3 id="计算字符串的长度性能低"><a href="#计算字符串的长度性能低" class="headerlink" title="计算字符串的长度性能低"></a>计算字符串的长度性能低</h3><p>C语言中有一个计算字符串长度的函数 <code>strlen</code>，但这个函数与Java的不一样，需要遍历整个字符串来计算长度，时间复杂度是<em>O（n）</em>，如果需要在循环中计算，性能将十分低下。</p>
+<h3 id="字符串拼接性能低"><a href="#字符串拼接性能低" class="headerlink" title="字符串拼接性能低"></a>字符串拼接性能低</h3><p>因为C语言字符串不记录长度，对于一个长度n的字符串来说，底层是n+1的字符数组（n是我们要存的字符，1是最后的结束符 <code>\0</code>）。</p>
+<blockquote>
+<p>底层虽然使用了n+1的字符数组，但是在使用 <code>strlen</code>方法的时候不会计算 <code>\0</code></p>
+</blockquote>
+<h2 id="Simple-Dynamic-String-简单的动态字符串"><a href="#Simple-Dynamic-String-简单的动态字符串" class="headerlink" title="Simple Dynamic String 简单的动态字符串"></a>Simple Dynamic String 简单的动态字符串</h2><p>在 <code>redis3.2</code>之前，sds只有一个类型，定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> &#123;</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> len; <span class="comment">// 当前的长度</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> <span class="built_in">free</span>; <span class="comment">// 剩余可用长度</span></span><br><span class="line">    <span class="keyword">char</span> buf[]; <span class="comment">// 实际存放的地方</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>在后续版本中改为了</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr5</span> &#123;</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; <span class="comment">/* 3 lsb of type, and 5 msb of string length */</span></span><br><span class="line">    <span class="keyword">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr8</span> &#123;</span></span><br><span class="line">    <span class="keyword">uint8_t</span> len; <span class="comment">// sds的当前长度(单位是字节)</span></span><br><span class="line">    <span class="keyword">uint8_t</span> alloc; <span class="comment">// sds分配的内存大小(单位是字节)</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; <span class="comment">// sdshdr的类型</span></span><br><span class="line">    <span class="keyword">char</span> buf[]; <span class="comment">// 实际存放的地方</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr16</span> &#123;</span></span><br><span class="line">    <span class="keyword">uint16_t</span> len; </span><br><span class="line">    <span class="keyword">uint16_t</span> alloc; </span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; </span><br><span class="line">    <span class="keyword">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line">....</span><br></pre></td></tr></table></figure>
+
+<p><code>sdshdr5</code>、<code>sdshdr8</code>、<code>sdshdr16</code>、<code>sdshdr32</code>、<code>sdshdr64</code> 一共五个方法，其中官方注解有些到 <code>sdshdr5</code>还没有被使用过。</p>
+<h3 id="类型机制"><a href="#类型机制" class="headerlink" title="类型机制"></a>类型机制</h3><p>上面介绍了一共有五个 <code>sdshdrX</code>方法，看着都差不多只是 <code>len</code>和 <code>alloc</code> 类型不同，为什么要这么做呢？</p>
+<p>其实也很简单就是省内存，而且真的是把能省就省发挥到了机制，在做业务开发的时候很少会为了这点内存再去做一套特殊的处理…</p>
+<h4 id="节省内存"><a href="#节省内存" class="headerlink" title="节省内存"></a>节省内存</h4><p>我们已知的是 <code>len</code>和 <code>alloc</code>服务于字符串的长度，分别记录字符串长度和</p>
+<ul>
+<li><code>uint8</code>: 字符串的长度最大(2^8)-1  = 255</li>
+<li><code>uint16</code>: 字符串的长度最大(2^16)-1 = 35535</li>
+<li><code>uint32</code>: 字符串的长度最大(2^32)-1 = 4294967295</li>
+<li><code>uint64</code>: 字符串的长度最大(2^64)-1 = 1.8446744e+19</li>
+</ul>
+<p>绝大多数情况下字符串的长度都不会超过35536，如果使用 <code>uint64</code>存储几十个几百就太浪费了。</p>
+<h4 id="最大长度问题"><a href="#最大长度问题" class="headerlink" title="最大长度问题"></a>最大长度问题</h4><p>虽然类型限制了最大长度为(2^64)-1 ，但是真正限制的并不是它。</p>
+<p><code>getBitOffsetFromArgument</code> 是一个计算偏移量防止为负或者溢出的方法。在其方法内有这么一个判断：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Limit offset to server.proto_max_bulk_len (512MB in bytes by default) */</span></span><br><span class="line"><span class="keyword">if</span> ((loffset &lt; <span class="number">0</span>) || (loffset &gt;&gt; <span class="number">3</span>) &gt;= server.proto_max_bulk_len)</span><br><span class="line">&#123;</span><br><span class="line">    addReplyError(c,err);</span><br><span class="line">    <span class="keyword">return</span> C_ERR;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>根据源码注释可以看到，他是设置了512MB的一个长度限制，超出会返回异常。</p>
+<p>在 <code>config.c</code> 文件中会对配置对象统一的定义。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">createLongLongConfig(<span class="string">&quot;proto-max-bulk-len&quot;</span>, <span class="literal">NULL</span>, MODIFIABLE_CONFIG, <span class="number">1024</span>*<span class="number">1024</span>, LONG_MAX, server.proto_max_bulk_len, <span class="number">512ll</span>*<span class="number">1024</span>*<span class="number">1024</span>, MEMORY_CONFIG, <span class="literal">NULL</span>, <span class="literal">NULL</span>), <span class="comment">/* Bulk request max size */</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="字符串的追加与扩容"><a href="#字符串的追加与扩容" class="headerlink" title="字符串的追加与扩容"></a>字符串的追加与扩容</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">redis&gt;</span><span class="bash"> SET msg <span class="string">&quot;hello world&quot;</span></span></span><br><span class="line">OK</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">redis&gt;</span><span class="bash"> APPEND msg <span class="string">&quot; again!&quot;</span></span></span><br><span class="line">(integer) 18</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">redis&gt;</span><span class="bash"> GET msg</span></span><br><span class="line">&quot;hello world again!&quot;</span><br></pre></td></tr></table></figure>
+
+<p>如上执行了一个简单的字符串追加工作。接下来以伪代码的形式介绍整个过程经历了什么。</p>
+<h4 id="SET-命令，创建一个SDS对象"><a href="#SET-命令，创建一个SDS对象" class="headerlink" title="SET 命令，创建一个SDS对象"></a>SET 命令，创建一个SDS对象</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> &#123;</span></span><br><span class="line">    len = <span class="number">11</span>;</span><br><span class="line">    <span class="built_in">free</span> = <span class="number">0</span>;</span><br><span class="line">    buf = <span class="string">&quot;hello world\0&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="执行-APPEND-命令"><a href="#执行-APPEND-命令" class="headerlink" title="执行 APPEND 命令"></a>执行 APPEND 命令</h4><p>此时相应的 <code>sdshdr</code> 被更新，字符串 <code>&quot; again!&quot;</code> 会被追加到原来的 <code>&quot;hello world&quot;</code> 之后：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> &#123;</span></span><br><span class="line">    len = <span class="number">18</span>;</span><br><span class="line">    <span class="built_in">free</span> = <span class="number">18</span>;</span><br><span class="line">    buf = <span class="string">&quot;hello world again!\0                  &quot;</span>;     <span class="comment">// 空白的地方为预分配空间，共 18 + 18 + 1 个字节</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>不难发现，<code>free</code>从0-&gt;18，<code>len</code>从11-&gt;18，这次扩容整体从11-&gt;22（18-11+18）。</p>
+<p>具体代码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">sds <span class="title">sdscatlen</span><span class="params">(sds s, <span class="keyword">const</span> <span class="keyword">void</span> *t, <span class="keyword">size_t</span> len)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">size_t</span> curlen = sdslen(s);      <span class="comment">// 获取当前字符串的长度</span></span><br><span class="line">    s = sdsMakeRoomFor(s,len);      <span class="comment">// 扩容</span></span><br><span class="line">    <span class="keyword">if</span> (s == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">memcpy</span>(s+curlen, t, len);       <span class="comment">// 内存拷贝</span></span><br><span class="line">    sdssetlen(s, curlen+len);       <span class="comment">// 更新len属性</span></span><br><span class="line">    s[curlen+len] = <span class="string">&#x27;\0&#x27;</span>;           <span class="comment">// 末尾追加一个\0</span></span><br><span class="line">    <span class="keyword">return</span> s;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">sds <span class="title">sdsMakeRoomFor</span><span class="params">(sds s, <span class="keyword">size_t</span> addlen)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">void</span> *sh, *newsh;  <span class="comment">//定义两个 sdshdr 结构体指针</span></span><br><span class="line">    <span class="keyword">size_t</span> avail = sdsavail(s); <span class="comment">// 获取 s 目前空闲空间长度</span></span><br><span class="line">    <span class="keyword">size_t</span> len, newlen, reqlen; <span class="comment">// len为扩展前长度,newlen为扩展后长度</span></span><br><span class="line">    <span class="keyword">char</span> type, oldtype = s[<span class="number">-1</span>] &amp; SDS_TYPE_MASK; <span class="comment">// 用作sdsType的判断</span></span><br><span class="line">    <span class="keyword">int</span> hdrlen;</span><br><span class="line">    <span class="keyword">size_t</span> usable;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Return ASAP if there is enough space left. */</span> </span><br><span class="line">    <span class="keyword">if</span> (avail &gt;= addlen) <span class="keyword">return</span> s; <span class="comment">// 如果可用空间大于添加的长度，直接返回</span></span><br><span class="line"></span><br><span class="line">    len = sdslen(s);<span class="comment">// 获取 s 目前已占用空间的长度</span></span><br><span class="line">    sh = (<span class="keyword">char</span>*)s-sdsHdrSize(oldtype);  <span class="comment">//结构体指针赋值</span></span><br><span class="line">    reqlen = newlen = (len+addlen); <span class="comment">// 复制扩展后长度,原长度+扩展的长度数</span></span><br><span class="line">    assert(newlen &gt; len);   <span class="comment">/* Catch size_t overflow */</span></span><br><span class="line">    <span class="comment">// 开始设定扩展后长度</span></span><br><span class="line">    <span class="keyword">if</span> (newlen &lt; SDS_MAX_PREALLOC)</span><br><span class="line">        <span class="comment">// 如果新长度小于SDS_MAX_PREALLOC(1M),新长度直接翻倍</span></span><br><span class="line">        <span class="comment">// 这也就是上面为什么从11-&gt;22</span></span><br><span class="line">        newlen *= <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="comment">// 否则每次新增一个SDS_MAX_PREALLOC单位也就是1M</span></span><br><span class="line">        newlen += SDS_MAX_PREALLOC;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 此时有了新长度需要重新获取一下sds的类型,也就是sdshdr5,sdshdr8...</span></span><br><span class="line">    type = sdsReqType(newlen);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Don&#x27;t use type 5: the user is appending to the string and type 5 is</span></span><br><span class="line"><span class="comment">     * not able to remember empty space, so sdsMakeRoomFor() must be called</span></span><br><span class="line"><span class="comment">     * at every appending operation. */</span></span><br><span class="line">    <span class="comment">// 作者示意不要使用sdshdr5,会变转换为sdshdr8</span></span><br><span class="line">    <span class="keyword">if</span> (type == SDS_TYPE_5) type = SDS_TYPE_8;</span><br><span class="line"></span><br><span class="line">    hdrlen = sdsHdrSize(type);</span><br><span class="line">    assert(hdrlen + newlen + <span class="number">1</span> &gt; reqlen);  <span class="comment">/* Catch size_t overflow */</span></span><br><span class="line">    <span class="comment">// 对比扩容前后类型是否改变，做对应的处理，不重要</span></span><br><span class="line">    <span class="keyword">if</span> (oldtype==type) &#123;</span><br><span class="line">        <span class="comment">// 没有改变,在原空间分配</span></span><br><span class="line">        newsh = s_realloc_usable(sh, hdrlen+newlen+<span class="number">1</span>, &amp;usable);</span><br><span class="line">        <span class="keyword">if</span> (newsh == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        s = (<span class="keyword">char</span>*)newsh+hdrlen;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">/* Since the header size changes, need to move the string forward,</span></span><br><span class="line"><span class="comment">         * and can&#x27;t use realloc */</span></span><br><span class="line">        <span class="comment">// 重新分配空间</span></span><br><span class="line">        <span class="comment">// 并删除原空间</span></span><br><span class="line">        newsh = s_malloc_usable(hdrlen+newlen+<span class="number">1</span>, &amp;usable);</span><br><span class="line">        <span class="keyword">if</span> (newsh == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        <span class="built_in">memcpy</span>((<span class="keyword">char</span>*)newsh+hdrlen, s, len+<span class="number">1</span>);</span><br><span class="line">        s_free(sh);</span><br><span class="line">        s = (<span class="keyword">char</span>*)newsh+hdrlen;</span><br><span class="line">        s[<span class="number">-1</span>] = type;</span><br><span class="line">        sdssetlen(s, len);</span><br><span class="line">    &#125;</span><br><span class="line">    usable = usable-hdrlen<span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">if</span> (usable &gt; sdsTypeMaxSize(type))</span><br><span class="line">        usable = sdsTypeMaxSize(type);</span><br><span class="line">    sdssetalloc(s, usable);</span><br><span class="line">    <span class="keyword">return</span> s;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="编码格式"><a href="#编码格式" class="headerlink" title="编码格式"></a>编码格式</h2><p>在Redis中为了进一步的节省内存还为SDS设置了三种编码格式：</p>
+<ul>
+<li><code>OBJ_ENCODING_EMBSTR</code>：长度小于44字节的字符串，该编码中 <code>RedisObject</code>、<code>SDS</code>放置在连续的内存中。</li>
+<li><code>OBJ_ENCODING_RAW</code>：长度大于44字节,除此之外与 <code>OBJ_ENCODING_EMBSTR</code>区别仅在于是否为连续内存</li>
+<li><code>OBJ_ENCODING_INT</code>: 有时候我们会在String寸INT类型的自然数，例如一个手机号如果为字符串则需要11字节，如果使用long long 只需要8字节。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>Redis 的字符串表示为 <code>sds</code> ，而不是 C 字符串（以 <code>\0</code> 结尾的 <code>char*</code>），相比较有如下特性<ul>
+<li>在计算字符长度时更高效，直接读取 <code>len</code>熟悉为O(1)复杂度，传统C语言需要逐个遍历为O(n)</li>
+<li>提供更高效的扩容机制，牺牲一部分内存的情况下换取更快的追加速度</li>
+<li>二进制安全，不强制通过 <code>\0</code>作为结尾。也就是说在SDS中可以存储任何值</li>
+</ul>
+</li>
+</ul>
+<h2 id="致谢"><a href="#致谢" class="headerlink" title="致谢"></a>致谢</h2><ul>
+<li><a class="link"   target="_blank" rel="noopener" href="https://tech.youzan.com/redisyuan-ma-jie-xi/" >Redis源码解析 - 有赞技术团队<i class="fas fa-external-link-alt"></i></a></li>
+<li><a class="link"   target="_blank" rel="noopener" href="https://redisbook.readthedocs.io/en/latest/index.html" >Redis 设计与实现<i class="fas fa-external-link-alt"></i></a></li>
+<li><a class="link"   target="_blank" rel="noopener" href="https://juejin.cn/post/6847902218528489479" >Redis动态字符串SDS源码学习<i class="fas fa-external-link-alt"></i></a></li>
+</ul>
+
+        </div>
+
+        
+            <div class="post-copyright-info">
+                <div class="article-copyright-info-container">
+    <ul>
+        <li>本文标题：Redis数据结构源码解析(一) SDS</li>
+        <li>本文作者：SunRan</li>
+        <li>创建时间：2022-01-18 16:25:33</li>
+        <li>
+            本文链接：https://lksun.cn/2022/01/18/Redis数据结构源码解析-一-SDS/
+        </li>
+        <li>
+            版权声明：本博客所有文章除特别声明外，均采用 <a class="license" target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh">BY-NC-SA</a> 许可协议。转载请注明出处！
+        </li>
+    </ul>
+</div>
+
+            </div>
+        
+
+        
+            <ul class="post-tags-box">
+                
+                    <li class="tag-item">
+                        <a href="/tags/%E6%BA%90%E7%A0%81/">#源码</a>&nbsp;
+                    </li>
+                
+                    <li class="tag-item">
+                        <a href="/tags/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%B3%BB%E5%88%97/">#Redis数据结构源码解析系列</a>&nbsp;
+                    </li>
+                
+            </ul>
+        
+
+        
+            <div class="article-nav">
+                
+                    <div class="article-prev">
+                        <a class="prev"
+                           rel="prev"
+                           href="/2022/01/19/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-%E4%BA%8C-%E5%AD%97%E5%85%B8/"
+                        >
+                            <span class="left arrow-icon flex-center">
+                              <i class="fas fa-chevron-left"></i>
+                            </span>
+                            <span class="title flex-center">
+                                <span class="post-nav-title-item">Redis数据结构源码解析(二) 字典</span>
+                                <span class="post-nav-item">上一篇</span>
+                            </span>
+                        </a>
+                    </div>
+                
+                
+                    <div class="article-next">
+                        <a class="next"
+                           rel="next"
+                           href="/2022/01/18/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-%E3%80%87-%E4%BA%94%E5%A4%A7%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/"
+                        >
+                            <span class="title flex-center">
+                                <span class="post-nav-title-item">Redis数据结构源码解析(〇) 五大数据类型</span>
+                                <span class="post-nav-item">下一篇</span>
+                            </span>
+                            <span class="right arrow-icon flex-center">
+                              <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </a>
+                    </div>
+                
+            </div>
+        
+
+        
+            <div class="comment-container">
+                <div class="comments-container">
+    <div id="comment-anchor"></div>
+    <div class="comment-area-title">
+        <i class="fas fa-comments">&nbsp;评论</i>
+    </div>
+    
+
+        
+            
+    <div id="gitalk-container"></div>
+    <script 
+            src="//cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+    <script >
+
+        function loadGitalk() {
+            let __gitalk__pathname = decodeURI(location.pathname);
+            const __gitalk__pathnameLength = __gitalk__pathname.length;
+            const __gitalk__pathnameMaxLength = 50;
+            if (__gitalk__pathnameLength > __gitalk__pathnameMaxLength) {
+                __gitalk__pathname = __gitalk__pathname.substring(0, __gitalk__pathnameMaxLength - 3) + '...';
+            }
+
+            try {
+                Gitalk && new Gitalk({
+                    clientID: '08e9308be0b51d05c331',
+                    clientSecret: '2054045db43d1be1b7032fabd599a70760a91ec1',
+                    repo: 'canonnr.github.io',
+                    owner: 'CanonNr',
+                    admin: ['CanonNr'],
+                    id: __gitalk__pathname,
+                    language: 'zh-CN'
+                }).render('gitalk-container');
+
+            } catch (e) {
+                window.Gitalk = null;
+            }
+        }
+
+        if ('false') {
+            const loadGitalkTimeout = setTimeout(() => {
+                loadGitalk();
+                clearTimeout(loadGitalkTimeout);
+            }, 1000);
+        } else {
+            window.addEventListener('DOMContentLoaded', loadGitalk);
+        }
+    </script>
+
+
+
+        
+    
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+
+        </div>
+
+        <div class="page-main-content-bottom">
+            <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy;
+            
+              <span>2018</span>
+              -
+            
+            2022&nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;<a href="/">SunRan</a>
+        </div>
+        
+            <script async  src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="website-count info-item">
+                
+                    <span id="busuanzi_container_site_uv">
+                        访问人数&nbsp;<span id="busuanzi_value_site_uv"></span>&ensp;
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv">
+                        总访问量&nbsp;<span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+        <div class="theme-info info-item">
+            由 <a target="_blank" href="https://hexo.io">Hexo</a> 驱动&nbsp;|&nbsp;主题&nbsp;<a class="theme-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep v3.4.5</a>
+        </div>
+        
+            <div class="icp-info info-item"><a target="_blank" rel="nofollow" href="https://beian.miit.gov.cn">辽ICP备18001547号</a></div>
+        
+        
+    </div>
+</footer>
+
+        </div>
+    </div>
+
+    
+        <div class="post-tools">
+            <div class="post-tools-container">
+    <ul class="tools-list">
+        <!-- TOC aside toggle -->
+        
+
+        <!-- go comment -->
+        
+            <li class="go-comment">
+                <i class="fas fa-comment"></i>
+            </li>
+        
+    </ul>
+</div>
+
+        </div>
+    
+
+    <div class="right-bottom-side-tools">
+        <div class="side-tools-container">
+    <ul class="side-tools-list">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <li class="tools-item tool-expand-width flex-center">
+            <i class="fas fa-arrows-alt-h"></i>
+        </li>
+
+        <li class="tools-item tool-dark-light-toggle flex-center">
+            <i class="fas fa-moon"></i>
+        </li>
+
+        <!-- rss -->
+        
+            <li class="tools-item rss flex-center">
+                <a class="flex-center"
+                   href="/atom.xml"
+                   target="_blank"
+                >
+                    <i class="fas fa-rss"></i>
+                </a>
+            </li>
+        
+
+        
+            <li class="tools-item tool-scroll-to-top flex-center">
+                <i class="fas fa-arrow-up"></i>
+            </li>
+        
+
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list">
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+        
+    </ul>
+</div>
+
+    </div>
+
+    
+
+    <div class="image-viewer-container">
+    <img src="">
+</div>
+
+
+    
+        <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-input-field-pre">
+            <i class="fas fa-keyboard"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="popup-btn-close">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fas fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+</main>
+
+
+
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/dark-light-toggle.js"></script>
+
+
+
+    
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+<div class="post-scripts">
+    
+</div>
+
+
+
+</body>
+</html>

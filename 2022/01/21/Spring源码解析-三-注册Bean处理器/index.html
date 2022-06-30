@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="Hexo Theme Keep">
+    <meta name="author" content="SunRan">
+    
+    <title>
+        
+            Spring源码解析(三) 注册Bean处理器对象 |
+        
+        lksun
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/39935301?v=4">
+    
+<link rel="stylesheet" href="/css/font-awesome.min.css">
+
+    <script id="hexo-configurations">
+    let KEEP = window.KEEP || {};
+    KEEP.hexo_config = {"hostname":"lksun.cn","root":"/","language":"zh-CN","path":"search.json"};
+    KEEP.theme_config = {"toc":{"enable":false,"number":false,"expand_all":false,"init_open":true},"style":{"primary_color":"#FF7E00","avatar":"https://avatars.githubusercontent.com/u/39935301?v=4","favicon":"https://avatars.githubusercontent.com/u/39935301?v=4","article_img_align":"left","left_side_width":"260px","content_max_width":"920px","hover":{"shadow":false,"scale":false},"first_screen":{"enable":true,"background_img":"/images/bg.svg","description":"♥ Do have faith in what you're doing."},"scroll":{"progress_bar":{"enable":false},"percent":{"enable":false}}},"local_search":{"enable":true,"preload":true},"code_copy":{"enable":false,"style":"default"},"pjax":{"enable":false},"lazyload":{"enable":false},"version":"3.4.5"};
+    KEEP.language_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"};
+  </script>
+<meta name="generator" content="Hexo 6.0.0"><link rel="alternate" href="/atom.xml" title="lksun" type="application/atom+xml">
+</head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+
+    
+</div>
+
+
+<main class="page-container">
+
+    
+
+    <div class="page-main-content">
+
+        <div class="page-main-content-top">
+            <header class="header-wrapper">
+
+    <div class="header-content">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                lksun
+            </a>
+        </div>
+
+        <div class="right">
+            <div class="pc">
+                <ul class="menu-list">
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/"
+                            >
+                                首页
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/archives"
+                            >
+                                归档
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/collection"
+                            >
+                                合集
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/BlogPlan"
+                            >
+                                计划
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/about"
+                            >
+                                关于我
+                            </a>
+                        </li>
+                    
+                    
+                        <li class="menu-item search search-popup-trigger">
+                            <i class="fas fa-search"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <div class="mobile">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fas fa-search"></i></div>
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/collection">合集</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/BlogPlan">计划</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/about">关于我</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle">
+
+            <div class="main-content">
+
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <span class="title-hover-animation">Spring源码解析(三) 注册Bean处理器对象</span>
+        </div>
+
+        
+            <div class="article-header">
+                <div class="avatar">
+                    <img src="https://avatars.githubusercontent.com/u/39935301?v=4">
+                </div>
+                <div class="info">
+                    <div class="author">
+                        <span class="name">SunRan</span>
+                        
+                    </div>
+                    <div class="meta-info">
+                        <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fas fa-edit"></i>&nbsp;
+        <span class="pc">2022-01-21 13:28:57</span>
+        <span class="mobile">2022-01-21 13:28</span>
+    </span>
+    
+        <span class="article-categories article-meta-item">
+            <i class="fas fa-folder"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/categories/Java/">Java</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fas fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/Spring/">Spring</a>&nbsp;
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/Spring%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%B3%BB%E5%88%97/">Spring源码解析系列</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fas fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+</div>
+
+                    </div>
+                </div>
+            </div>
+        
+
+        <div class="article-content markdown-body">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前面讲了 <code>BeanFactoryPostProcessor</code>本文讲 <code>BeanPostProcessor</code>，两种总给人一种很像的感觉，首先我们先总结一下两者的区别（可能不全，逐步补充）。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>BeanFactoryPostProcessor</th>
+<th>BeanPostProcessor</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>角色</td>
+<td>Spring IOC 所管理的一个Bean</td>
+<td>Spring IOC 所管理的一个Bean</td>
+</tr>
+<tr>
+<td>执行时间</td>
+<td>IOC容器启动的时候，准确来说是 <code>refresh</code>时</td>
+<td>每次 <code>getBean</code>时都会调用</td>
+</tr>
+<tr>
+<td>执行次数</td>
+<td>有且只有一次</td>
+<td>无数次</td>
+</tr>
+<tr>
+<td>实现方式</td>
+<td>实现 <code>BeanFactoryPostProcessor</code>接口</td>
+<td>实现 <code>BeanPostProcessor</code>接口</td>
+</tr>
+<tr>
+<td>排序</td>
+<td>可排序</td>
+<td>可排序</td>
+</tr>
+<tr>
+<td>获取到的参数</td>
+<td><code>ConfigurableListableBeanFactory</code> 也就是Spring 的核心BeanFactory</td>
+<td><code>Object</code>,执行 <code>getBean</code>的对象</td>
+</tr>
+<tr>
+<td>操作性</td>
+<td>Bean工厂的操作他都能执行，例如：可以获取 <code>BeanDefinition</code>并修改；提前注入Bean对象（执行该步骤时，自定义的Bean都没有注入）；等等等等</td>
+<td>修改当前Bean的信息</td>
+</tr>
+</tbody></table>
+<p>本文主要介绍了 <code>refresh</code> 方法中的 <code>registerBeanPostProcessors(beanFactory);</code> , 用于注册Bean的处理器对象。</p>
+<p>⚠️ 只是注册，不执行。</p>
+<h2 id="抽象流程"><a href="#抽象流程" class="headerlink" title="抽象流程"></a>抽象流程</h2><p>其实和 <code>BeanFactoryPostProcessor</code>的调用流程类似。</p>
+<ol>
+<li>根据类型查询所有 <code>BeanPostProcessor</code>的实现对象，得到一个数组</li>
+<li>记录 <code>BeanPostProcessor</code>的数量（会有一个+1的操作，因为要算上下面手动注册的 <code>BeanPostProcessorChecker</code>）</li>
+<li>手动注册 <code>BeanPostProcessorChecker</code></li>
+<li>准备一些容器，用于存放收集来的各种处理器</li>
+<li>遍历 <code>BeanPostProcessor</code>的实现对象数组<ol>
+<li>如果 <code>BeanPostProcessor</code>实现了 <code>PriorityOrdered</code>接口，获取 <code>Bean</code>对象并添加到 <code>priorityOrderedPostProcessors</code>列表（和后面的有所不同，这里添加到列表的是 <code>BeanPostProcessor</code>具体 <code>Bean</code>对象,其他都是字符串）<ol>
+<li>如果获取到的 <code>Bean</code>对象还实现了 <code>MergedBeanDefinitionPostProcessor</code>则添加到 <code>internalPostProcessors</code>列表</li>
+</ol>
+</li>
+<li>如果没有实现 <code>PriorityOrdered</code>接口，但是实现了 <code>Order</code>接口，添加到 <code>orderedPostProcessorNames</code>列表中</li>
+<li>如果没有实现排序相关的接口，普通对象添加到 <code>nonOrderedPostProcessorNames</code>列表中</li>
+</ol>
+</li>
+<li>对 <code>priorityOrderedPostProcessors</code> 进行排序，并注册</li>
+<li>遍历 <code>orderedPostProcessorNames</code>列表<ol>
+<li>根据 <code>ppName</code>找到对应的 <code>BeanPostProcessor</code>实例对象</li>
+<li>添加到 <code>orderedPostProcessors</code>集合中</li>
+<li>如果实现了 <code>MergedBeanDefinitionPostProcessor</code>接口，那么则将 <code>ppName</code>对应的 <code>bean</code>实例添加到 <code>internalPostProcessors</code>中</li>
+</ol>
+</li>
+<li>对 <code>orderedPostProcessors</code>进行排序</li>
+<li>注册实现了 <code>Ordered</code>接口的 <code>BeanPostProcessor</code>实例添加到 <code>BeanFactory</code>中</li>
+<li>遍历 <code>nonOrderedPostProcessorNames</code> 列表</li>
+<li>根据 <code>ppName</code>找到对应的 <code>BeanPostProcessor</code>实例对象</li>
+<li>添加到 <code>nonOrderedPostProcessors</code>列表</li>
+<li>如果实现了 <code>MergedBeanDefinitionPostProcessor</code> 则添加到 <code>internalPostProcessors</code>列表</li>
+<li>遍历 <code>nonOrderedPostProcessors</code>列表进行注册</li>
+<li>对 <code>internalPostProcessors</code> 列表进行排序，并遍历注册</li>
+<li>最后注册 <code>ApplicationListenerDetector</code>到 <code>BeanFactory</code>中</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>整个流程类似于调用 <code>BeanFactoryPostProcessor</code>，通过类型获取所有的Bean处理器对象。然后根据顺序进行注册。</p>
+<p>顺序为：</p>
+<ol>
+<li>实现了 <code>PriorityOrdered</code>接口的处理器对象</li>
+<li>实现了 <code>Ordered</code>接口的处理器对象</li>
+<li>没有实现排序的处理器对象</li>
+<li>实现了 <code>MergedBeanDefinitionPostProcessor</code>接口的处理器对象</li>
+</ol>
+
+        </div>
+
+        
+            <div class="post-copyright-info">
+                <div class="article-copyright-info-container">
+    <ul>
+        <li>本文标题：Spring源码解析(三) 注册Bean处理器对象</li>
+        <li>本文作者：SunRan</li>
+        <li>创建时间：2022-01-21 13:28:57</li>
+        <li>
+            本文链接：https://lksun.cn/2022/01/21/Spring源码解析-三-注册Bean处理器/
+        </li>
+        <li>
+            版权声明：本博客所有文章除特别声明外，均采用 <a class="license" target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh">BY-NC-SA</a> 许可协议。转载请注明出处！
+        </li>
+    </ul>
+</div>
+
+            </div>
+        
+
+        
+            <ul class="post-tags-box">
+                
+                    <li class="tag-item">
+                        <a href="/tags/Spring/">#Spring</a>&nbsp;
+                    </li>
+                
+                    <li class="tag-item">
+                        <a href="/tags/Spring%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%B3%BB%E5%88%97/">#Spring源码解析系列</a>&nbsp;
+                    </li>
+                
+            </ul>
+        
+
+        
+            <div class="article-nav">
+                
+                    <div class="article-prev">
+                        <a class="prev"
+                           rel="prev"
+                           href="/2022/01/21/Spring%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-%E5%9B%9B-%E5%88%9D%E5%A7%8B%E5%8C%96Bean%E5%B7%A5%E5%8E%82/"
+                        >
+                            <span class="left arrow-icon flex-center">
+                              <i class="fas fa-chevron-left"></i>
+                            </span>
+                            <span class="title flex-center">
+                                <span class="post-nav-title-item">Spring源码解析(四) 初始化Bean工厂</span>
+                                <span class="post-nav-item">上一篇</span>
+                            </span>
+                        </a>
+                    </div>
+                
+                
+                    <div class="article-next">
+                        <a class="next"
+                           rel="next"
+                           href="/2022/01/21/Spring%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-%E4%BA%8C-%E8%B0%83%E7%94%A8BeanFactory%E5%A4%84%E7%90%86%E5%99%A8/"
+                        >
+                            <span class="title flex-center">
+                                <span class="post-nav-title-item">Spring源码解析(二) 调用Bean工厂处理器对象</span>
+                                <span class="post-nav-item">下一篇</span>
+                            </span>
+                            <span class="right arrow-icon flex-center">
+                              <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </a>
+                    </div>
+                
+            </div>
+        
+
+        
+            <div class="comment-container">
+                <div class="comments-container">
+    <div id="comment-anchor"></div>
+    <div class="comment-area-title">
+        <i class="fas fa-comments">&nbsp;评论</i>
+    </div>
+    
+
+        
+            
+    <div id="gitalk-container"></div>
+    <script 
+            src="//cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+    <script >
+
+        function loadGitalk() {
+            let __gitalk__pathname = decodeURI(location.pathname);
+            const __gitalk__pathnameLength = __gitalk__pathname.length;
+            const __gitalk__pathnameMaxLength = 50;
+            if (__gitalk__pathnameLength > __gitalk__pathnameMaxLength) {
+                __gitalk__pathname = __gitalk__pathname.substring(0, __gitalk__pathnameMaxLength - 3) + '...';
+            }
+
+            try {
+                Gitalk && new Gitalk({
+                    clientID: '08e9308be0b51d05c331',
+                    clientSecret: '2054045db43d1be1b7032fabd599a70760a91ec1',
+                    repo: 'canonnr.github.io',
+                    owner: 'CanonNr',
+                    admin: ['CanonNr'],
+                    id: __gitalk__pathname,
+                    language: 'zh-CN'
+                }).render('gitalk-container');
+
+            } catch (e) {
+                window.Gitalk = null;
+            }
+        }
+
+        if ('false') {
+            const loadGitalkTimeout = setTimeout(() => {
+                loadGitalk();
+                clearTimeout(loadGitalkTimeout);
+            }, 1000);
+        } else {
+            window.addEventListener('DOMContentLoaded', loadGitalk);
+        }
+    </script>
+
+
+
+        
+    
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+
+        </div>
+
+        <div class="page-main-content-bottom">
+            <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy;
+            
+              <span>2018</span>
+              -
+            
+            2022&nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;<a href="/">SunRan</a>
+        </div>
+        
+            <script async  src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="website-count info-item">
+                
+                    <span id="busuanzi_container_site_uv">
+                        访问人数&nbsp;<span id="busuanzi_value_site_uv"></span>&ensp;
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv">
+                        总访问量&nbsp;<span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+        <div class="theme-info info-item">
+            由 <a target="_blank" href="https://hexo.io">Hexo</a> 驱动&nbsp;|&nbsp;主题&nbsp;<a class="theme-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep v3.4.5</a>
+        </div>
+        
+            <div class="icp-info info-item"><a target="_blank" rel="nofollow" href="https://beian.miit.gov.cn">辽ICP备18001547号</a></div>
+        
+        
+    </div>
+</footer>
+
+        </div>
+    </div>
+
+    
+        <div class="post-tools">
+            <div class="post-tools-container">
+    <ul class="tools-list">
+        <!-- TOC aside toggle -->
+        
+
+        <!-- go comment -->
+        
+            <li class="go-comment">
+                <i class="fas fa-comment"></i>
+            </li>
+        
+    </ul>
+</div>
+
+        </div>
+    
+
+    <div class="right-bottom-side-tools">
+        <div class="side-tools-container">
+    <ul class="side-tools-list">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <li class="tools-item tool-expand-width flex-center">
+            <i class="fas fa-arrows-alt-h"></i>
+        </li>
+
+        <li class="tools-item tool-dark-light-toggle flex-center">
+            <i class="fas fa-moon"></i>
+        </li>
+
+        <!-- rss -->
+        
+            <li class="tools-item rss flex-center">
+                <a class="flex-center"
+                   href="/atom.xml"
+                   target="_blank"
+                >
+                    <i class="fas fa-rss"></i>
+                </a>
+            </li>
+        
+
+        
+            <li class="tools-item tool-scroll-to-top flex-center">
+                <i class="fas fa-arrow-up"></i>
+            </li>
+        
+
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list">
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+        
+    </ul>
+</div>
+
+    </div>
+
+    
+
+    <div class="image-viewer-container">
+    <img src="">
+</div>
+
+
+    
+        <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-input-field-pre">
+            <i class="fas fa-keyboard"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="popup-btn-close">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fas fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+</main>
+
+
+
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/dark-light-toggle.js"></script>
+
+
+
+    
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+<div class="post-scripts">
+    
+</div>
+
+
+
+</body>
+</html>
